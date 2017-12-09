@@ -1,0 +1,47 @@
+First part confirmed (Same for LSTM and CNN)
+
+Second part:
+- Dataset same format : Corpus, train, dev, test
+
+Model:
+1. Encoder (Same as first part, to get hidden layer representation of questions)
+2. Domain classifier (NEW)
+
+
+
+Training made up of 2 components:
+A. --- "Direct Transfer"
+Same procedure, q --> p+, p-, p-- ... (tuples of 21 elements), TRAIN ON UBUNTU dataset itself
+Want generality so will evaluate on ANDROID dataset ==> Need to retrain from scratch on UBUNTU and evaluate each epoch on ANDROID for hyperparam tuning (backprop also?)
+
+B. --- "Domain Adaptation"
+Feedforward neural network
+h(q) --> id for 20 qs from Ubuntu (Label 0)
+h(q') --> id for 20 qs from Android (Label 1)
+
+
+
+Detailed procedure 
+1. Get all q from UBUNTU, build tuples, similarity matrix, cosine similarity, multi-margin loss
+
+2. Randomly pick 20 examples from UBUNTU and assign label 0, 20 examples from ANDROID and assign label 1
+3. Get hidden layer for each q from 2 and feed to FEED FORWARD NEURAL NET and do softmax to get label prediction
+4. Have target of labels ready and use BINARY CROSS ENTROPY LOSS module from pytorch for loss
+5. So have TWO LOSSES (from multi-margin L1 and binary-cross-entropy L2)
+6. Sum up the losses and call backwards (Not simple sum but rather do: L1 - lambda (L2), where lambda is a hyperparameter)
+7. Then do .backward() for model
+
+
+
+Some notes:
+- Randomize the 20-20 examples each epoch (for 
+- glove dataset
+- lambda [1e-3 1e-7]
+- bidirectional
+
+metrics.py (AUC) - stellar
+benchmarks
+
+Baselines:
+- tf-idf 
+- BM25 (Leucene)
