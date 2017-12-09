@@ -1,0 +1,8 @@
+Data1
+Data2
+Code/.ipynb_checkpoints/
+Code/__pycache__/
+cuda/.ipynb_checkpoints/
+cuda/__pycache__/
+.idea
+.idea/
