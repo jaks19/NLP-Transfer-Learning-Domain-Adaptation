@@ -1,3 +1,5 @@
+from parameters import *
+
 from collections import defaultdict
 import numpy as np
 
@@ -43,8 +45,6 @@ def android_id_to_similar_different(dev=True):
             
         for line in lines_set:
             main_q_id = int(line.split()[0])
-            if len(evaluation_data[main_q_id][1]) == 20: continue
-                
             associated = int(line.split()[1])
             if pos: 
                 evaluation_data[main_q_id][0].append(associated)

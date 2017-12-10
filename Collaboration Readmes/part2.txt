@@ -29,6 +29,7 @@ Detailed procedure
 4. Have target of labels ready and use BINARY CROSS ENTROPY LOSS module from pytorch for loss
 5. So have TWO LOSSES (from multi-margin L1 and binary-cross-entropy L2)
 6. Sum up the losses and call backwards (Not simple sum but rather do: L1 - lambda (L2), where lambda is a hyperparameter)
+8 Have 2 optimizers in all
 7. Then do .backward() for model
 
 
@@ -46,9 +47,7 @@ Baselines:
 - tf-idf 
 - BM25 (Leucene)
 
-DONE:
-glove dataset loading, saving dict as pickle file because over 1gb
-
-LISTED TASKS:
-Get data in similar format as before (re-implementing same type of functions since data presented in slightly different manner)
-Add function to just get a list of main question ids for classification by feed forward NN
+TODO:
+Everything ready except:
+- Implementation of baselines
+- feeding stuff to metrics.py
