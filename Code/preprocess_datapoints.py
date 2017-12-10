@@ -1,4 +1,5 @@
 from collections import defaultdict
+import numpy as np
 
 # For Direct Transfer, training:
 # Ubuntu main question id mapped to [[similar_questions_ids], [different_questions_ids]]
@@ -56,3 +57,7 @@ def android_id_to_similar_different(dev=True):
 # training_data = ubuntu_id_to_similar_different():
 # dev_data = android_id_to_similar_different(dev=True)
 # test_data = android_id_to_similar_different(dev=False)
+
+# Get 20 random question ids from a complete list of ids
+def get_20_random_ids(big_list):
+    return list(np.random.choice(big_list, 20, replace=False))

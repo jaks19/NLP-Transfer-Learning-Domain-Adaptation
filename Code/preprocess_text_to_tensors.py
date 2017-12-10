@@ -201,3 +201,24 @@ def construct_qs_matrix_testing(q_ids_sequential, lstm, h0, c0, word2vec, id2Dat
     final_matrix_tuples_by_constituent_qs_by_hidden_size = torch.stack(qs_tuples, dim=0, out=None)
 
     return final_matrix_tuples_by_constituent_qs_by_hidden_size
+
+
+# For categorization of questions by neural net, build a matrix of numq * lstm_hidden_layer_size
+# Takes in list of q ids
+# Matrix is to be fed as a batch to a neural network after being stacked with a similar matrix for another domain and compared to target
+def construct_qs_matrix_domain_classification(domain_ids, lstm, h0, c0, word2vec, domain_specific_id_to_data, word_to_id_vocab):
+    qs_matrix_list = []
+    qs_seq_length = []
+
+    for q in domain_ids:
+        q_matrix_3d, q_num_words = get_question_matrix(q, domain_specific_id_to_data, word_to_id_vocab, word2vec)
+        qs_matrix_list.append(q_matrix_3d)
+        qs_seq_length.append(q_num_words)
+
+    qs_padded = Variable(torch.cat(qs_matrix_list, 0))
+    # [ [num_q, num_word_per_q, hidden_size] i.e. all hidden, [1, num_q, hidden_size]  i.e. final hidden]:
+    qs_hidden = lstm(qs_padded, (h0, c0))
+    sum_h_qs = torch.sum(qs_hidden[0], dim=1)
+    mean_pooled_h_qs = torch.div(sum_h_qs, torch.autograd.Variable(torch.FloatTensor(qs_seq_length)[:, np.newaxis]))
+
+    return mean_pooled_h_qs
