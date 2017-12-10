@@ -37,10 +37,8 @@ h0 = Variable(torch.zeros(first_dim, 1, hidden_size), requires_grad=False)
 c0 = Variable(torch.zeros(first_dim, 1, hidden_size), requires_grad=False)
 
 
-''' Domain Classifier (Neural Net) '''
+''' Domain Classifier (None because this model does Direct Transfer) '''
 neural_net = DomainClassifier(input_size_nn, first_hidden_size_nn, second_hidden_size_nn)
-loss_function_nn = nn.CrossEntropyLoss()
-optimizer_nn = torch.optim.Adam(neural_net.parameters(), lr=lr_nn)
 
 
 ''' Procedural parameters '''
@@ -64,25 +62,6 @@ def train_lstm_question_similarity(lstm, batch_ids, batch_data, word2vec, id2Dat
     loss_batch = loss_function_lstm(similarity_matrix, target)
 
     print("lstm multi-margin loss on batch:", loss_batch.data[0])
-    return loss_batch
-
-
-def train_nn_domain_classification(neural_net, lstm, h0, c0, ids_ubuntu, ids_android, word2vec,
-    ubuntu_id_to_data, android_id_to_data):
-    neural_net.train()
-    lstm.train()
-
-    qs_matrix_ubuntu = construct_qs_matrix_domain_classification(ids_ubuntu, lstm, h0, c0, word2vec,
-        ubuntu_id_to_data, word_to_id_vocab)
-    qs_matrix_android = construct_qs_matrix_domain_classification(ids_android, lstm, h0, c0, word2vec,
-        android_id_to_data, word_to_id_vocab)
-    overall_qs_matrix = torch.cat([qs_matrix_ubuntu, qs_matrix_android])
-
-    out = neural_net.forward(overall_qs_matrix)
-    target_vector = Variable(torch.LongTensor(torch.cat([torch.zeros(20), torch.ones(20)]).numpy()))
-    loss_batch = loss_function_nn(out, target_vector)
-
-    print("Neural net cross-entropy loss on batch:", loss_batch.data[0])
     return loss_batch
 
 
@@ -111,7 +90,6 @@ for epoch in range(num_epochs):
     for batch in range(1, num_batches + 1):
         start = time.time()
         optimizer_lstm.zero_grad()
-        optimizer_nn.zero_grad()
         print("Working on batch #: ", batch)
 
         # Train on ubuntu similar question retrieval
@@ -119,17 +97,9 @@ for epoch in range(num_epochs):
         loss_batch_similarity = train_lstm_question_similarity(lstm, ids_this_batch_for_lstm,
         training_data_ubuntu, word2vec, ubuntu_id_to_data, word_to_id_vocab)
 
-        # Train on ubuntu-android domain classification task
-        ids_randomized_ubuntu = get_20_random_ids(training_question_ids_ubuntu)
-        ids_randomized_android = get_20_random_ids(dev_question_ids_android)
-        loss_batch_domain_classification = train_nn_domain_classification(neural_net, lstm, h0, c0,
-            ids_randomized_ubuntu, ids_randomized_android, word2vec, ubuntu_id_to_data, android_id_to_data)
-
-        # Overall loss = multi-margin loss - LAMBDA * cross entropy loss
-        overall_loss = loss_batch_similarity - (lamb * loss_batch_domain_classification)
+        overall_loss = loss_batch_similarity
         overall_loss.backward()
         optimizer_lstm.step()
-        optimizer_nn.step()
 
         print("Time_on_batch:", time.time() - start)
 

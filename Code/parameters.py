@@ -40,11 +40,3 @@ padding_idx = 0
 glove_path = '../glove.840B.300d.txt'
 android_corpus_path = '../android_dataset/corpus.tsv'
 ubuntu_corpus_path = '../ubuntu_dataset/text_tokenized.txt'
-WORD_TO_ID = 'word_to_id'
-U_ID2DATA = 'ubuntu_id_to_data'
-A_ID2DATA = 'android_id_to_data'
-
-
-
-
-

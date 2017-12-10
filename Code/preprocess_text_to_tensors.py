@@ -33,7 +33,7 @@ def process_whole_corpuses():
     vectorizer = CountVectorizer(binary=True, analyzer='word', token_pattern='[^\s]+[a-z]*[0-9]*')
     vectorizer.fit(all_txt)
 
-    return {WORD_TO_ID: vectorizer.vocabulary_, U_ID2DATA: ubuntu_id_to_data, A_ID2DATA: android_id_to_data}
+    return {'word_to_id': vectorizer.vocabulary_, 'ubuntu_id_to_data': ubuntu_id_to_data, 'android_id_to_data': android_id_to_data}
 
 
 # Get glove embeddings matrix only for words in our corpus (++Gain of gigabytes of memory)
