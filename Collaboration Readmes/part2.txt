@@ -45,3 +45,10 @@ benchmarks
 Baselines:
 - tf-idf 
 - BM25 (Leucene)
+
+DONE:
+glove dataset loading, saving dict as pickle file because over 1gb
+
+LISTED TASKS:
+Get data in similar format as before (re-implementing same type of functions since data presented in slightly different manner)
+Add function to just get a list of main question ids for classification by feed forward NN
