@@ -33,7 +33,12 @@ def process_whole_corpuses():
     vectorizer = CountVectorizer(binary=True, analyzer='word', token_pattern='[^\s]+[a-z]*[0-9]*')
     vectorizer.fit(all_txt)
 
-    return {'word_to_id': vectorizer.vocabulary_, 'ubuntu_id_to_data': ubuntu_id_to_data, 'android_id_to_data': android_id_to_data}
+    return {
+            'word_to_id': vectorizer.vocabulary_,
+            'ubuntu_id_to_data': ubuntu_id_to_data,
+            'android_id_to_data': android_id_to_data,
+            'vectorizer': vectorizer
+            }
 
 
 # Get glove embeddings matrix only for words in our corpus (++Gain of gigabytes of memory)
@@ -106,7 +111,7 @@ def organize_ids_training(q_ids, data, num_differing_questions):
 
 # Given ids of main qs in this android batch
 # Returns:
-# 1. list of ids of all the questions if candidates
+# 1. list of ids of all the questions
 # 2. list of tuples, (q_main_id, num_candidates)
 # 3. list of 1,0... 1 for pos, 0 for neg (wrt. candidates) to be used in AUC metric
 def organize_test_ids(q_ids, data):

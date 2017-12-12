@@ -64,7 +64,7 @@ class AUCMeter(Meter):
         self.sortind = None
 
 
-    def value(self, max_fpr=1.0):
+    def value(self, max_fpr=0.05):
         assert max_fpr > 0
 
         # case when number of elements added are 0

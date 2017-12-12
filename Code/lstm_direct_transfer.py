@@ -104,11 +104,13 @@ for epoch in range(num_epochs):
         print("Time_on_batch:", time.time() - start)
 
     # Evaluate on dev set for AUC score
-    dev_MRR_score = eval_model(lstm, dev_question_ids_android, dev_data_android, word2vec, android_id_to_data,
+    dev_AUC_score = eval_model(lstm, dev_question_ids_android, dev_data_android, word2vec, android_id_to_data,
         word_to_id_vocab)
-    test_MRR_score = eval_model(lstm, test_question_ids_android, test_data_android, word2vec, android_id_to_data,
+    test_AUC_score = eval_model(lstm, test_question_ids_android, test_data_android, word2vec, android_id_to_data,
         word_to_id_vocab)
-    print("AUC Score:", dev_MRR_score)
+    print("Dev AUC Score:", dev_AUC_score)
+    print("Test AUC Score:", test_AUC_score)
+
 
     # Log results to local logs.txt file
     if log_results:
