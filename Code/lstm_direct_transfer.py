@@ -2,7 +2,7 @@ from parameters import *
 
 from preprocess_datapoints import *
 from preprocess_text_to_tensors import *
-from domain_classifier import *
+from domain_classifier_model import *
 from meter import *
 
 import torch
@@ -20,11 +20,11 @@ android_id_to_data = processed_corpus['android_id_to_data']
 
 ''' Data Sets '''
 training_data_ubuntu = ubuntu_id_to_similar_different()
-training_question_ids_ubuntu = list(training_data_ubuntu.keys())[:20]
+training_question_ids_ubuntu = list(training_data_ubuntu.keys())
 dev_data_android = android_id_to_similar_different(dev=True)
-dev_question_ids_android = list(dev_data_android.keys())[:20]
+dev_question_ids_android = list(dev_data_android.keys())
 test_data_android = android_id_to_similar_different(dev=False)
-test_question_ids_android = list(test_data_android.keys())[:10]
+test_question_ids_android = list(test_data_android.keys())
 # Note: Remember to edit batch_size accordingly if testing on smaller size data sets
 
 
@@ -42,9 +42,8 @@ neural_net = DomainClassifier(input_size_nn, first_hidden_size_nn, second_hidden
 
 
 ''' Procedural parameters '''
-batch_size = 2
-num_epochs = 10
-num_batches = round(len(training_question_ids_ubuntu) / batch_size)
+# num_batches = round(len(training_question_ids_ubuntu) / batch_size)
+num_batches = 1
 auc_scorer = AUCMeter()
 
 
@@ -67,19 +66,26 @@ def train_lstm_question_similarity(lstm, batch_ids, batch_data, word2vec, id2Dat
 
 def eval_model(lstm, ids, data, word2vec, id2Data, word_to_id_vocab):
     lstm.eval()
-    candidate_ids, q_main_ids, labels = organize_test_ids(ids, data)
-
-    candidates_qs_matrix = construct_qs_matrix_testing_candidates(candidate_ids, lstm, h0, c0, word2vec, id2Data,
-        word_to_id_vocab)
-    main_qs_matrix = construct_qs_matrix_testing_main(q_main_ids, lstm, h0, c0, word2vec, id2Data,
-        word_to_id_vocab)
-
-    similarity_matrix = torch.nn.functional.cosine_similarity(candidates_qs_matrix, main_qs_matrix, eps=1e-08)
-    target = torch.FloatTensor(labels)
     auc_scorer.reset()
-    auc_scorer.add(similarity_matrix.data, target)
-    auc_score = auc_scorer.value()
 
+    candidate_ids, q_main_ids, labels = organize_test_ids(ids, data)
+    piece_size = 10
+    num_pieces = round(len(q_main_ids) / piece_size)
+
+    for n in range(1, num_pieces + 1):
+        q_main_ids_this_batch = q_main_ids[piece_size * (n - 1) : piece_size * n]
+        candidate_ids_this_batch = candidate_ids[piece_size * (n - 1) : piece_size * n]
+
+        candidates_qs_matrix = construct_qs_matrix_testing(candidate_ids_this_batch, lstm, h0, c0, word2vec, id2Data,
+        word_to_id_vocab)
+        main_qs_matrix = construct_qs_matrix_testing(q_main_ids_this_batch, lstm, h0, c0, word2vec, id2Data,
+        word_to_id_vocab)
+
+        similarity_matrix_this_batch = torch.nn.functional.cosine_similarity(candidates_qs_matrix, main_qs_matrix, eps=1e-08)
+        target_this_batch = torch.FloatTensor(labels[piece_size * (n - 1): piece_size * n])
+        auc_scorer.add(similarity_matrix_this_batch.data, target_this_batch)
+
+    auc_score = auc_scorer.value()
     return auc_score
 
 
@@ -101,24 +107,24 @@ for epoch in range(num_epochs):
         overall_loss.backward()
         optimizer_lstm.step()
 
-        print("Time_on_batch:", time.time() - start)
+        print("Time on batch:", time.time() - start)
 
     # Evaluate on dev set for AUC score
+    start = time.time()
     dev_AUC_score = eval_model(lstm, dev_question_ids_android, dev_data_android, word2vec, android_id_to_data,
         word_to_id_vocab)
     test_AUC_score = eval_model(lstm, test_question_ids_android, test_data_android, word2vec, android_id_to_data,
         word_to_id_vocab)
-    print("Dev AUC Score:", dev_AUC_score)
-    print("Test AUC Score:", test_AUC_score)
-
+    print("Dev AUC score:", dev_AUC_score)
+    print("Test AUC score:", test_AUC_score)
+    print("Time on eval:", time.time() - start)
 
     # Log results to local logs.txt file
-    if log_results:
-        with open('logs.txt', 'a') as log_file:
-            log_file.write('epoch: ' + str(epoch) + '\n')
-            log_file.write('lstm lr: ' + str(lr_lstm) + ' marg: ' + str(margin) + ' drop: ' + str(
-                dropout) + '\n' + 'nn lr: ' + str(lr_nn) + 'lambda: ' + lamb)
-            log_file.write('dev_MRR: ' + str(dev_MRR_score) + '\n')
+    # if log_results:
+    #     with open('logs.txt', 'a') as log_file:
+    #         log_file.write('epoch: ', epoch, '\n')
+    #         log_file.write('lstm lr: ', lr_lstm, ' marg: ', margin, ' drop: ', dropout, '\n',  'nn lr: ', lr_nn, 'lambda: ', lamb)
+    #         log_file.write('dev_MRR: ', dev_MRR_score, '\n')
 
     # Save model for this epoch
     if save_model:

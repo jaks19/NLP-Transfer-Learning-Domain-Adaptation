@@ -90,9 +90,9 @@ def eval_model(lstm, ids, data, word2vec, id2Data, word_to_id_vocab):
     lstm.eval()
     candidate_ids, q_main_ids, labels = organize_test_ids(ids, data)
 
-    candidates_qs_matrix = construct_qs_matrix_testing_candidates(candidate_ids, lstm, h0, c0, word2vec, id2Data,
+    candidates_qs_matrix = construct_qs_matrix_testing(candidate_ids, lstm, h0, c0, word2vec, id2Data,
         word_to_id_vocab)
-    main_qs_matrix = construct_qs_matrix_testing_main(q_main_ids, lstm, h0, c0, word2vec, id2Data,
+    main_qs_matrix = construct_qs_matrix_testing(q_main_ids, lstm, h0, c0, word2vec, id2Data,
         word_to_id_vocab)
 
     similarity_matrix = torch.nn.functional.cosine_similarity(candidates_qs_matrix, main_qs_matrix, eps=1e-08)

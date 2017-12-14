@@ -1,18 +1,18 @@
 ''' Params Dashboard '''
 
 ''' Procedural parameters '''
-batch_size = 2
+batch_size = 100
 num_differing_questions = 20
-num_epochs = 10
+num_epochs = 25
 
-saved_model_name = "domain_adaptlr3d2m4lr3lam4"
-log_results = False
-save_model = False
+saved_model_name = "direct_train"
+log_results = True
+save_model = True
 
 
 ''' Model specs LSTM '''
 dropout = 0.2
-margin = 0.4
+margin = 0.2
 lr_lstm = 10**-3
 
 input_size = 300

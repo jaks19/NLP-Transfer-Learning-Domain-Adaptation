@@ -30,7 +30,9 @@ def process_whole_corpuses():
             else:
                 android_id_to_data[idx] = title_plus_body.split()
 
-    vectorizer = CountVectorizer(binary=True, analyzer='word', token_pattern='[^\s]+[a-z]*[0-9]*')
+    # vectorizer = CountVectorizer(binary=True, analyzer='word', token_pattern='[^\s]+[a-z]*[0-9]*')
+    vectorizer = CountVectorizer(binary=True, token_pattern='[^\s]+[a-z]*[0-9]*', analyzer='word', max_df=0.1)
+
     vectorizer.fit(all_txt)
 
     return {
@@ -77,7 +79,8 @@ def get_question_matrix(question_id, dict_qid_to_words, words_to_id_vocabulary, 
     for word in question_data:
         if len(word_ids) == 100: break
 
-        word_ids.append(int(words_to_id_vocabulary[word.lower()]))
+        try: word_ids.append(int(words_to_id_vocabulary[word.lower()]))
+        except: pass
 
     # Pad if need more rows
     number_words_before_padding = len(word_ids)
@@ -112,12 +115,12 @@ def organize_ids_training(q_ids, data, num_differing_questions):
 # Given ids of main qs in this android batch
 # Returns:
 # 1. list of ids of all the questions
-# 2. list of tuples, (q_main_id, num_candidates)
+# 2. list of q_mains, replicated to correspond to list of candidates
 # 3. list of 1,0... 1 for pos, 0 for neg (wrt. candidates) to be used in AUC metric
 def organize_test_ids(q_ids, data):
     processed_ids = []
     target_labels = []
-    q_main_pattern = []
+    q_main_ids = []
 
     for q_main in q_ids:
         all_p = data[q_main][1]
@@ -128,9 +131,9 @@ def organize_test_ids(q_ids, data):
             else:
                 target_labels.append(0)
         processed_ids += all_p
-        q_main_pattern.append((q_main, len(all_p)))
+        q_main_ids += [q_main] * len(all_p)
 
-    return processed_ids, q_main_pattern, target_labels
+    return processed_ids, q_main_ids, target_labels
 
 
 # A tuple is (q+, q-, q--, q--- ...)
@@ -172,7 +175,7 @@ def construct_qs_matrix_training(q_ids_sequential, lstm, h0, c0, word2vec, id2Da
     return final_matrix_tuples_by_constituent_qs_by_hidden_size
 
 
-def construct_qs_matrix_testing_candidates(q_ids_in_order, lstm, h0, c0, word2vec, id2Data, word_to_id_vocab):
+def construct_qs_matrix_testing(q_ids_in_order, lstm, h0, c0, word2vec, id2Data, word_to_id_vocab):
     qs_matrix_list = []
     qs_seq_length = []
 
@@ -187,28 +190,6 @@ def construct_qs_matrix_testing_candidates(q_ids_in_order, lstm, h0, c0, word2ve
     mean_pooled_h_qs = torch.div(sum_h_qs, torch.autograd.Variable(torch.FloatTensor(qs_seq_length)[:, np.newaxis]))
 
     return mean_pooled_h_qs
-
-
-def construct_qs_matrix_testing_main(q_main_ids, lstm, h0, c0, word2vec, id2Data, word_to_id_vocab):
-    all_mean_pooled_hiddens = []
-    resulting_hidden_size = hidden_size * 2 if bidirectional else hidden_size
-    initializing = True
-    built_tensor_of_all_qs = None
-
-    for (q, num_repetitions) in q_main_ids:
-        q_matrix_3d, q_num_words = get_question_matrix(q, id2Data, word_to_id_vocab, word2vec)
-        q_hidden = lstm(Variable(q_matrix_3d), (h0, c0))
-        summed_h_q = torch.sum(q_hidden[0], dim=1)
-        mean_pooled_h_q = torch.div(summed_h_q,
-                                    torch.autograd.Variable(torch.FloatTensor([q_num_words] * resulting_hidden_size)))
-
-        if initializing:
-            built_tensor_of_all_qs = torch.cat([mean_pooled_h_q] * num_repetitions)
-            initializing = False
-        else:
-            built_tensor_of_all_qs = torch.cat([built_tensor_of_all_qs] + [mean_pooled_h_q] * num_repetitions)
-
-    return built_tensor_of_all_qs
 
 
 # For categorization of questions by neural net, build a matrix of numq * lstm_hidden_layer_size
