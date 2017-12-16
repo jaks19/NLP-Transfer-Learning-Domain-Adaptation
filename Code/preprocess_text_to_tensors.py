@@ -4,6 +4,7 @@ from torch import nn
 from torch.autograd import Variable
 import torch
 import numpy as np
+import time
 
 from sklearn.feature_extraction.text import CountVectorizer
 
@@ -84,7 +85,7 @@ def get_question_matrix(question_id, dict_qid_to_words, words_to_id_vocabulary, 
 
     # Pad if need more rows
     number_words_before_padding = len(word_ids)
-    if number_words_before_padding < truncate_length: word_ids += [padding_idx] * (truncate_length - len(word_ids))
+    if number_words_before_padding < 100: word_ids += [padding_idx] * (truncate_length - len(word_ids))
 
     question_in_embedded_form = pytorch_embeddings(torch.LongTensor(word_ids)).data
     return question_in_embedded_form.unsqueeze(0), number_words_before_padding
@@ -123,17 +124,20 @@ def organize_test_ids(q_ids, data):
     q_main_ids = []
 
     for q_main in q_ids:
+        these_target_labels = []
         all_p = data[q_main][1]
         p_pluses = data[q_main][0]
         for p in all_p:
             if p in p_pluses:
-                target_labels.append(1)
+                these_target_labels.append(1)
             else:
-                target_labels.append(0)
-        processed_ids += all_p
-        q_main_ids += [q_main] * len(all_p)
+                these_target_labels.append(0)
+        processed_ids += [all_p]
+        q_main_ids.append((q_main, len(all_p)))
+        target_labels.append(these_target_labels)
 
     return processed_ids, q_main_ids, target_labels
+
 
 
 # A tuple is (q+, q-, q--, q--- ...)
@@ -175,11 +179,12 @@ def construct_qs_matrix_training(q_ids_sequential, lstm, h0, c0, word2vec, id2Da
     return final_matrix_tuples_by_constituent_qs_by_hidden_size
 
 
-def construct_qs_matrix_testing(q_ids_in_order, lstm, h0, c0, word2vec, id2Data, word_to_id_vocab):
+def construct_qs_matrix_testing(q_ids, lstm, h0, c0, word2vec, id2Data, word_to_id_vocab, main=False):
     qs_matrix_list = []
     qs_seq_length = []
 
-    for q in q_ids_in_order:
+    for q in q_ids:
+        if main: q = q[0]
         q_matrix_3d, q_num_words = get_question_matrix(q, id2Data, word_to_id_vocab, word2vec)
         qs_matrix_list.append(q_matrix_3d)
         qs_seq_length.append(q_num_words)
@@ -188,6 +193,7 @@ def construct_qs_matrix_testing(q_ids_in_order, lstm, h0, c0, word2vec, id2Data,
     qs_hidden = lstm(qs_padded, (h0, c0))
     sum_h_qs = torch.sum(qs_hidden[0], dim=1)
     mean_pooled_h_qs = torch.div(sum_h_qs, torch.autograd.Variable(torch.FloatTensor(qs_seq_length)[:, np.newaxis]))
+    if main: mean_pooled_h_qs = torch.cat([mean_pooled_h_qs] * q_ids[0][1], 0)
 
     return mean_pooled_h_qs
 

@@ -5,10 +5,6 @@ batch_size = 100
 num_differing_questions = 20
 num_epochs = 25
 
-saved_model_name = "direct_train"
-log_results = True
-save_model = True
-
 
 ''' Model specs LSTM '''
 dropout = 0.2
@@ -26,7 +22,7 @@ first_dim = num_layers * 2 if bidirectional else num_layers
 
 ''' Model specs NN '''
 lr_nn = 10**-3
-lamb = 10**-4
+lamb = 10**-6
 
 input_size_nn = 2*hidden_size if bidirectional else hidden_size
 first_hidden_size_nn = 300

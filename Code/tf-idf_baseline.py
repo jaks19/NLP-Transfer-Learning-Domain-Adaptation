@@ -62,7 +62,6 @@ for q_main_id, num_associated_questions in q_main_ids:
 
         index_into_list_all_all_candidate_ids += 1
 
-# print(list_of_scores)
 target = torch.FloatTensor(labels)
 auc_scorer.reset()
 auc_scorer.add(torch.FloatTensor(list_of_scores), target)

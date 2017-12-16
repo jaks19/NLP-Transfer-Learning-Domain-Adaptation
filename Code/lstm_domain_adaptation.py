@@ -20,11 +20,9 @@ android_id_to_data = processed_corpus['android_id_to_data']
 
 ''' Data Sets '''
 training_data_ubuntu = ubuntu_id_to_similar_different()
-training_question_ids_ubuntu = list(training_data_ubuntu.keys())[:20]
+training_question_ids_ubuntu = list(training_data_ubuntu.keys())
 dev_data_android = android_id_to_similar_different(dev=True)
 dev_question_ids_android = list(dev_data_android.keys())[:20]
-test_data_android = android_id_to_similar_different(dev=False)
-test_question_ids_android = list(test_data_android.keys())[:10]
 # Note: Remember to edit batch_size accordingly if testing on smaller size data sets
 
 
@@ -44,8 +42,6 @@ optimizer_nn = torch.optim.Adam(neural_net.parameters(), lr=lr_nn)
 
 
 ''' Procedural parameters '''
-batch_size = 2
-num_epochs = 10
 num_batches = round(len(training_question_ids_ubuntu) / batch_size)
 auc_scorer = AUCMeter()
 
@@ -101,6 +97,7 @@ def eval_model(lstm, ids, data, word2vec, id2Data, word_to_id_vocab):
     auc_scorer.add(similarity_matrix.data, target)
     auc_score = auc_scorer.value()
 
+    print("AUC score on Dev set:", auc_score)
     return auc_score
 
 
@@ -136,19 +133,3 @@ for epoch in range(num_epochs):
     # Evaluate on dev set for AUC score
     dev_AUC_score = eval_model(lstm, dev_question_ids_android, dev_data_android, word2vec, android_id_to_data,
         word_to_id_vocab)
-    test_AUC_score = eval_model(lstm, test_question_ids_android, test_data_android, word2vec, android_id_to_data,
-        word_to_id_vocab)
-    print("Dev AUC Score:", dev_AUC_score)
-    print("Test AUC Score:", test_AUC_score)
-
-    # Log results to local logs.txt file
-    if log_results:
-        with open('logs.txt', 'a') as log_file:
-            log_file.write('epoch: ' + str(epoch) + '\n')
-            log_file.write('lstm lr: ' + str(lr_lstm) + ' marg: ' + str(margin) + ' drop: ' + str(
-                dropout) + '\n' + 'nn lr: ' + str(lr_nn) + 'lambda: ' + lamb)
-            log_file.write('dev_MRR: ' + str(dev_MRR_score) + '\n')
-
-    # Save model for this epoch
-    if save_model:
-        torch.save(lstm, '../Pickle/' + saved_model_name + '_epoch' + str(epoch) + '.pt')
